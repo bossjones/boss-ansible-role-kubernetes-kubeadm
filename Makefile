@@ -191,3 +191,45 @@ flush-cache:
 
 bridge-up:
 	./vagrant_bridged_demo.sh --full --bridged_adapter auto
+
+bridge-restart:
+	./vagrant_bridged_demo.sh --restart
+
+ssh-bridge-master:
+	ssh -F ./ssh_config k8s-master-01.scarlettlab.home
+
+ssh-bridge-worker:
+	ssh -F ./ssh_config k8s-worker-01.scarlettlab.home
+
+ping-bridge:
+	@ansible-playbook -v -i hosts ping.yml
+
+run-bridge-ansible:
+	@ansible-playbook -i hosts vagrant_playbook.yml -v
+
+run-bridge-test-ansible:
+	@ansible-playbook -i hosts test.yml -v
+
+run-bridge-ansible-no-slow:
+	@ansible-playbook -i hosts vagrant_playbook.yml -v --skip-tags "slow"
+
+dummy-web-server:
+	python dummy-web-server.py
+
+busybox-pod:
+	kubectl run -it --rm --restart=Never busybox --image=busybox sh
+
+# nvm-install:
+# 	nvm install stable ;
+# 	nvm use stable ; 
+# 	npm install npm@latest -g ;
+# 	npm install -g docker-loghose ;
+# 	npm install -g docker-enter ;
+
+# hostnames-pod:
+# 	kubectl run hostnames --image=k8s.gcr.io/serve_hostname \
+# 	--labels=app=hostnames \
+#     --port=9376 \
+#     --replicas=3 ; \
+# 	kubectl get pods -l app=hostnames ; \
+# 	kubectl expose deployment hostnames --port=80 --target-port=9376 ; \

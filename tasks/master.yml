@@ -14,14 +14,28 @@
 #     creates: /etc/kubeadm-join.sh
 #   register: kubeadm_out
 
+
+- name: "get kubeadm init command - {{boss__kubernetes__kubeadm__kubeadm_init_cmd}}"
+  debug:
+    msg: "{{boss__kubernetes__kubeadm__kubeadm_init_cmd}}"
+  changed_when: false
+
 - name: initialize kube
   shell: >
        kubeadm reset --force &&
+       sysctl -p &&
        {{boss__kubernetes__kubeadm__kubeadm_init_cmd}}
   args:
     creates: /etc/kubeadm-join.sh
   register: kubeadm_out
 
+
+- name: write kubeadm_out to /var/log/kubeadm_init.log
+  copy:
+    content: |
+      {{kubeadm_out.stdout}}
+    dest: /var/log/kubeadm_init.log
+  when: ansible_os_family == "Debian"
 
 - name: get join string from stdout in kubeadm init command
   lineinfile:
@@ -82,25 +96,25 @@
     - true  # Run as root
     - false # Run as SSH user
 
-- name: create file ~/.kube/config for root/ssh user
-  # file: path='$HOME/.kube' state=directory owner=vagrant
-  file: path='$HOME/.kube/config' state=touch
-  become: '{{ item }}'
-  with_items:
-    - true  # Run as root
-    - false # Run as SSH user
+# - name: create file ~/.kube/config for root/ssh user
+#   # file: path='$HOME/.kube' state=directory owner=vagrant
+#   file: path='$HOME/.kube/config' state=touch
+#   become: '{{ item }}'
+#   with_items:
+#     - true  # Run as root
+#     - false # Run as SSH user
 
 # TODO: remove this
 # - file: path=/home/ubuntu/.kube state=directory owner=ubuntu
 
 # TODO: remove this
-- command: cp /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+# - command: cp /etc/kubernetes/admin.conf /home/vagrant/.kube/config
 
 # TODO: remove this
 # - command: cp /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
 
 # TODO: remove this
-- file: name=/home/vagrant/.kube/config state=file owner=vagrant
+# - file: name=/home/vagrant/.kube/config state=file owner=vagrant
 
 # TODO: remove this
 # - file: name=/home/ubuntu/.kube/config state=file owner=ubuntu
@@ -221,3 +235,41 @@
 #   until: result.stdout.find("Running") != -1
 #   retries: 100
 #   delay: 10
+
+# - name: 'setup $HOME/.kube/config for root'
+#   shell: >
+#      cp -fv /etc/kubernetes/admin.conf $HOME/.kube/config ;
+#      chown $(id -u):$(id -g) $HOME/.kube/config ;
+#   args:
+#     creates: /tmp/root-kube-config-created
+#   become: '{{ item }}'
+#   with_items:
+#     - true  # Run as root
+
+# - name: 'setup $HOME/.kube/config for default user'
+#   shell: >
+#      sudo cp -fv /etc/kubernetes/admin.conf $HOME/.kube/config ;
+#      sudo chown $(id -u):$(id -g) $HOME/.kube/config ;
+#   args:
+#     creates: /tmp/root-kube-config-created
+#   become: '{{ item }}'
+#   with_items:
+#     - false # Run as SSH user
+
+- name: setup $HOME/.kube/config for default user
+  copy: 
+    src: /etc/kubernetes/admin.conf 
+    dest: ~/.kube/config
+    remote_src: True
+  become: '{{ item }}'
+  with_items:
+    - true  # Run as root
+  tags:
+  - kubeadm
+  - kubelet
+
+- name: Get /etc/kubernetes/admin.conf and write it locally to ansible controller
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: ./admin.conf
+    flat: true

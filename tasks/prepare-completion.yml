@@ -22,14 +22,14 @@
   - bash-completion
   ignore_errors: yes
 
-- name: add kubectl/kubeadm/helm shell competions to ~/.{{ shell | default ('bash') }}rc
-  lineinfile:
-    dest: ~/.{{ shell | default ('bash') }}rc
-    line: "{{ item }}"
-    state: present
-    create: yes
-  with_items:
-  - "# k8s shell completion; for zsh min vers is 5.2+"
-  - "source <(kubectl completion {{ shell | default ('bash') }} 2>/dev/null || true)"
-  - "source <(kubeadm completion {{ shell | default ('bash') }} 2>/dev/null || true)"
-  - "source <(helm    completion {{ shell | default ('bash') }} 2>/dev/null || true)"
+# - name: add kubectl/kubeadm/helm shell competions to ~/.{{ shell | default ('bash') }}rc
+#   lineinfile:
+#     dest: ~/.{{ shell | default ('bash') }}rc
+#     line: "{{ item }}"
+#     state: present
+#     create: yes
+#   with_items:
+#   - "# k8s shell completion; for zsh min vers is 5.2+"
+#   - "source <(kubectl completion {{ shell | default ('bash') }} 2>/dev/null || true)"
+#   - "source <(kubeadm completion {{ shell | default ('bash') }} 2>/dev/null || true)"
+#   - "source <(helm    completion {{ shell | default ('bash') }} 2>/dev/null || true)"

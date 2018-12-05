@@ -1,0 +1,67 @@
+---
+- hosts: primary-master
+  name: (primary-master) - Install k8 prepre steps on primary masters
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+  vars:
+    boss__ntp__timezone: 'America/New_York'
+  tags:
+    - timezone
+  # pre_tasks:
+  
+  #   # SOURCE: kubeadm-playbook
+
+  #   ## Decide how to approach the master: inventory or force fqdn (for non MasterHA cases); via VIP,MasterHA (for MasterHA cases)
+  #   - block:
+  #     - name: by default set master name to inventory definition (no MasterHA case)
+  #       set_fact: master_name={{ groups['primary-master'][0] }}
+  #       when:
+  #       - not custom.networking.fqdn.always
+  #       - not custom.networking.fqdn.master
+  #       - groups['masters'] | length == 1
+
+  #     - name: force use fqdn for master name (no MasterHA case)
+  #       set_fact: master_name={{ hostvars[groups['primary-master'][0]]['ansible_fqdn'] }}
+  #       when:
+  #       - custom.networking.fqdn.always or custom.networking.fqdn.master
+  #       - groups['masters'] | length == 1
+
+  #     - name: force use fqdn for master name (MasterHA case)
+  #       set_fact: master_name={{ custom.networking.masterha_fqdn }}
+  #       when:
+  #       - custom.networking.fqdn.always or custom.networking.fqdn.master
+  #       - groups['masters'] | length > 1
+
+  #     - name: force use vip for master name (MasterHA case)
+  #       set_fact: master_name={{ custom.networking.masterha_vip }}
+  #       when:
+  #       - not custom.networking.fqdn.always
+  #       - not custom.networking.fqdn.master
+  #       - groups['masters'] | length > 1
+
+  #     tags:
+  #     - always
+
+  roles:
+    - role: ../
+      tags: [ 'master', 'install', 'master_install', 'master_lookup']
+      task: facts
+      boss__ntp__timezone: 'America/New_York'
+      boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241'
+      boss__kubernetes__kubeadm__kubernetes_interface: 'enp0s3'
+    - role: boss-ansible-role-debug
+
+  tasks:
+    - name: Display 'master_name'
+      debug:
+        var: master_name
+      changed_when: false
+
+    - name: Display 'boss__kubernetes__kubeadm__kubeadm_init_cmd'
+      debug:
+        var: boss__kubernetes__kubeadm__kubeadm_init_cmd
+      changed_when: false

@@ -1,427 +1,458 @@
 ---
-# # FIXME: Copied from kubeadm-playbook, 11/28/2018
-# ## Preparations
-# ## Making sure python exists on all nodes, so Ansible will be able to run:
-# - hosts: servers
-#   gather_facts: no
-#   become: yes
-#   become_method: sudo
-#   tags:
-#     - sanity_check
-#     - always
-#     - servers
-#   pre_tasks:
-#   - name: Install python2 for Ansible (usually required on ubuntu, which defaults to python3) # Alternativelly, for Ubuntu machines, define var: ansible_python_interpreter=/usr/bin/python3
-#     raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal) || (yum install -y python2 python-simplejson)
-#     register: output
-#     changed_when: output.stdout != ""
-#     tags: always
+# FIXME: Copied from kubeadm-playbook, 11/28/2018
+## Preparations
+## Making sure python exists on all nodes, so Ansible will be able to run:
+- hosts: servers
+  gather_facts: no
+  become: yes
+  become_method: sudo
+  tags:
+    - sanity_check
+    - always
+    - servers
+  pre_tasks:
+  - name: Install python2 for Ansible (usually required on ubuntu, which defaults to python3) # Alternativelly, for Ubuntu machines, define var: ansible_python_interpreter=/usr/bin/python3
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal) || (yum install -y python2 python-simplejson)
+    register: output
+    changed_when: output.stdout != ""
+    tags: always
 
-#   - setup: # aka gather_facts
-#     tags: always # required for tags, see ansible issue: #14228
+  - setup: # aka gather_facts
+    tags: always # required for tags, see ansible issue: #14228
 
-#   - name: test min. vars (group_vars/all) are set (ClusterConfiguration and k8s_network_addons_urls)
-#     debug: msg='Make sure min. vars are set in group_vars/all/ (e.g. ClusterConfiguration and k8s_network_addons_urls)'
-#     when:
-#     - ClusterConfiguration is not defined
-#     - JoinConfiguration is not defined
-#     failed_when:
-#     - ClusterConfiguration is not defined
-#     - JoinConfiguration is not defined
-#     tags: always # always check if we have vars in place
+  - name: test min. vars (group_vars/all) are set (ClusterConfiguration and k8s_network_addons_urls)
+    debug: msg='Make sure min. vars are set in group_vars/all/ (e.g. ClusterConfiguration and k8s_network_addons_urls)'
+    when:
+    - ClusterConfiguration is not defined
+    - JoinConfiguration is not defined
+    failed_when:
+    - ClusterConfiguration is not defined
+    - JoinConfiguration is not defined
+    tags: always # always check if we have vars in place
 
-#   # - name: debug groups
-#   #   debug: msg='{{groups | to_yaml}}'
+  # - name: debug groups
+  #   debug: msg='{{groups | to_yaml}}'
 
-#   # - name: debug hostvars
-#   #   debug: msg='{{hostvars | to_yaml}}'
+  # - name: debug hostvars
+  #   debug: msg='{{hostvars | to_yaml}}'
 
-# ##############################################################################
-# # Install prereqs for perf/tools
-# ##############################################################################
-# # # no_log: true
-# - hosts: servers
-#   gather_facts: True
-#   become: yes
-#   become_method: sudo
-#   tags:
-#     - prereqs
-#     - perf
-#     - perf_tools
-#     - tools
-#     - servers
-#   pre_tasks:
-#   - name: "Install prereq tools"
-#     package:
-#       name: "{{ item }}"
-#       state: present
-#     with_items:
-#         - nethogs
-#         - ccze
-#         - htop
-#         - silversearcher-ag
-#         - netcat
-#         - nmap
-#         - netperf
-#         - ngrep
-#         - nload
-#         - ncdu
-#         - traceroute
-#         - sysstat
-#         # NOTE: RUN THIS GUY
-#         - mtr
-#         - tmux
-#         # SOURCE: https://www.tecmint.com/test-network-throughput-in-linux/
-#         - iperf3
-#         # SOURCE: https://www.tecmint.com/tcpflow-analyze-debug-network-traffic-in-linux/
-#         - tcpflow
-#         # SOURCE: https://www.tecmint.com/linux-network-bandwidth-monitoring-tools/
-#         - iftop
+##############################################################################
+# Install prereqs for perf/tools
+##############################################################################
+# # no_log: true
+- hosts: servers
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  tags:
+    - prereqs
+    - perf
+    - perf_tools
+    - tools
+    - servers
+  pre_tasks:
+  - name: "Install prereq tools"
+    package:
+      name: "{{ item }}"
+      state: present
+    with_items:
+        - nethogs
+        - ccze
+        - htop
+        - silversearcher-ag
+        - netcat
+        - nmap
+        - netperf
+        - ngrep
+        - nload
+        - ncdu
+        - traceroute
+        - sysstat
+        - conntrack
+        # NOTE: RUN THIS GUY
+        - mtr
+        - tmux
+        # SOURCE: https://www.tecmint.com/test-network-throughput-in-linux/
+        - iperf3
+        # SOURCE: https://www.tecmint.com/tcpflow-analyze-debug-network-traffic-in-linux/
+        - tcpflow
+        # SOURCE: https://www.tecmint.com/linux-network-bandwidth-monitoring-tools/
+        - iftop
 
-#   # SOURCE: https://gist.github.com/kometchtech/c5681b2a70b30c99bf7e834ffb3abba5
-#   - name: "Install dnsperf prereqs"
-#     package:
-#       name: "{{ item }}"
-#       state: present
-#     with_items:
-#         - bind9utils
-#         - libbind-dev
-#         - libkrb5-dev
-#         - libssl-dev
-#         - libcap-dev
-#         - libxml2-dev
-#         - geoip-bin
-#         - libgeoip-dev
-#         - build-essential
-#         - curl
-#         # REQUIRED: https://www.tecmint.com/hegemon-system-monitoring-tool-for-linux/
-#         - libsensors4-dev
+  # SOURCE: https://gist.github.com/kometchtech/c5681b2a70b30c99bf7e834ffb3abba5
+  - name: "Install dnsperf prereqs"
+    package:
+      name: "{{ item }}"
+      state: present
+    with_items:
+        - bind9utils
+        - libbind-dev
+        - libkrb5-dev
+        - libssl-dev
+        - libcap-dev
+        - libxml2-dev
+        - geoip-bin
+        - libgeoip-dev
+        - build-essential
+        - curl
+        # REQUIRED: https://www.tecmint.com/hegemon-system-monitoring-tool-for-linux/
+        - libsensors4-dev
 
-#   - name: check if /usr/bin/sysdig exists
-#     stat:
-#       path: /usr/bin/sysdig
-#     register: sysdig_result
-#     failed_when: false
-#     changed_when: false
+  - name: check if /usr/bin/sysdig exists
+    stat:
+      path: /usr/bin/sysdig
+    register: sysdig_result
+    failed_when: false
+    changed_when: false
+    tags:
+      - slow
 
-#   - name: "SYSDIG: curl -s https://s3.amazonaws.com/download.draios.com/stable/install-sysdig | sudo bash ONLY if it is not installed already"
-#     shell: |
-#       bash -lc "curl -s https://s3.amazonaws.com/download.draios.com/stable/install-sysdig | sudo bash"
-#     args:
-#       executable: /bin/bash
-#     when: not sysdig_result.stat.exists
+  - name: "SYSDIG: curl -s https://s3.amazonaws.com/download.draios.com/stable/install-sysdig | sudo bash ONLY if it is not installed already"
+    shell: |
+      bash -lc "curl -s https://s3.amazonaws.com/download.draios.com/stable/install-sysdig | sudo bash"
+    args:
+      executable: /bin/bash
+    when: not sysdig_result.stat.exists
+    tags:
+      - slow
 
-#   - name: check if /usr/local/bin/cargo exists
-#     stat:
-#       path: /usr/local/bin/cargo
-#     register: cargo_result
-#     failed_when: false
-#     changed_when: false
+  - name: check if /usr/local/bin/cargo exists
+    stat:
+      path: /usr/local/bin/cargo
+    register: cargo_result
+    failed_when: false
+    changed_when: false
+    tags:
+      - slow
 
-#   - name: "RUST: curl -sSf https://static.rust-lang.org/rustup.sh | sh ONLY if it is not installed already"
-#     shell: |
-#       bash -lc "curl -sSf https://static.rust-lang.org/rustup.sh | sh"
-#     args:
-#       executable: /bin/bash
-#     when: not cargo_result.stat.exists
+  # - name: "RUST: curl -sSf https://static.rust-lang.org/rustup.sh | sh ONLY if it is not installed already"
+  #   shell: |
+  #     bash -lc "curl -sSf https://static.rust-lang.org/rustup.sh | sh"
+  #   args:
+  #     executable: /bin/bash
+  #   when: not cargo_result.stat.exists
+  #   tags:
+  #     - slow
 
-#   - name: install ctop
-#     shell: |
-#       curl -L 'https://github.com/bcicen/ctop/releases/download/v0.7.1/ctop-0.7.1-linux-amd64' > /usr/local/bin/ctop
-#       chmod +x /usr/local/bin/ctop
-#     become: yes
-#     become_method: sudo
-#     args:
-#       executable: /bin/bash
+  - name: install ctop
+    shell: |
+      curl -L 'https://github.com/bcicen/ctop/releases/download/v0.7.1/ctop-0.7.1-linux-amd64' > /usr/local/bin/ctop
+      chmod +x /usr/local/bin/ctop
+    become: yes
+    become_method: sudo
+    args:
+      executable: /bin/bash
+      creates: /usr/local/bin/ctop
 
-#     # https://github.com/bcicen/ctop/releases/download/v0.7.1/ctop-0.7.1-linux-amd64
+    # https://github.com/wercker/stern/releases/download/1.10.0/stern_linux_amd64
 
-#   tasks:
+    # https://github.com/bcicen/ctop/releases/download/v0.7.1/ctop-0.7.1-linux-amd64
 
-#   - name: cat /etc/hosts
-#     command: cat /etc/hosts
-#     args:
-#       warn: no
+  tasks:
 
-# ##############################################################################
-# # Install osquery
-# ##############################################################################
-# # $ export OSQUERY_KEY=1484120AC4E9F8A1A577AEEE97A80C63C9D8B80B
-# # $ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys $OSQUERY_KEY
-# # $ sudo add-apt-repository 'deb [arch=amd64] https://pkg.osquery.io/deb deb main'
-# # $ sudo apt update
-# # $ sudo apt install osquery
+  - name: cat /etc/hosts
+    command: cat /etc/hosts
+    args:
+      warn: no
 
-# ##############################################################################
-# # SERVERS: bootstrap common roles
-# ##############################################################################
-# - hosts: servers
-#   gather_facts: True
-#   become: yes
-#   become_method: sudo
-#   tags:
-#     - bootstrap
-#     - servers
-#     - common
-#   roles:
-#     - role: boss-ansible-role-bootstrap
-#     - role: boss-ansible-role-core
-#     - role: boss-ansible-role-fact
-#     - role: boss-ansible-role-environment
-#     - role: boss-ansible-role-etckeeper
+##############################################################################
+# Install osquery
+##############################################################################
+# $ export OSQUERY_KEY=1484120AC4E9F8A1A577AEEE97A80C63C9D8B80B
+# $ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys $OSQUERY_KEY
+# $ sudo add-apt-repository 'deb [arch=amd64] https://pkg.osquery.io/deb deb main'
+# $ sudo apt update
+# $ sudo apt install osquery
 
-#   tasks:
+##############################################################################
+# SERVERS: bootstrap common roles
+##############################################################################
+- hosts: servers
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  tags:
+    - bootstrap
+    - servers
+    - common
+    - slow
+  roles:
+    - role: boss-ansible-role-bootstrap
+    - role: boss-ansible-role-core
+    - role: boss-ansible-role-fact
+    - role: boss-ansible-role-environment
+    - role: boss-ansible-role-etckeeper
 
-#   - name: cat /etc/hosts
-#     command: cat /etc/hosts
-#     args:
-#       warn: no
+  tasks:
 
-# ##############################################################################
-# # SERVERS: bootstrap debug role and update hosts across entire cluster
-# ##############################################################################
-# - hosts: servers
-#   gather_facts: True
-#   become: yes
-#   become_method: sudo
-#   tags:
-#     - bootstrap
-#     - servers
-#   roles:
-#     - role: boss-ansible-role-debug
-#     - role: boss-ansible-role-update-hosts
-#       boss__update__hosts__hosts_file: /etc/hosts
-#       boss__update__hosts__ansible_group: "servers"
-#       boss__update__hosts__networking_interface: "enp0s8"
+  - name: cat /etc/hosts
+    command: cat /etc/hosts
+    args:
+      warn: no
 
-#   tasks:
+##############################################################################
+# SERVERS: bootstrap debug role and update hosts across entire cluster
+##############################################################################
+- hosts: servers
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  tags:
+    - bootstrap
+    - servers
+  roles:
+    - role: boss-ansible-role-debug
+      boss__debug__dump_type: 'seperate'
+    # - role: boss-ansible-role-update-hosts
+    #   boss__update__hosts__hosts_file: /etc/hosts
+    #   boss__update__hosts__ansible_group: "servers"
+    #   # boss__update__hosts__networking_interface: "enp0s8"  # host-only version
+    #   boss__update__hosts__networking_interface: "enp0s3"  # bridge-only version 
 
-#   - name: cat /etc/hosts
-#     command: cat /etc/hosts
-#     args:
-#       warn: no
+  tasks:
 
-# ##############################################################################
-# # SERVERS: Install and configure ntp
-# ##############################################################################
-# - hosts: servers
-#   name: (servers) - Install and configure ntp
-#   gather_facts: True
-#   become: yes
-#   become_method: sudo
-#   environment:
-#     DEBIAN_FRONTEND: noninteractive
-#   vars:
-#     boss__ntp__timezone: 'America/New_York'
-#   tags:
-#     - docker
-#     - docker-provision
-#     - worker
-#     - install
-#     - worker_install
-#     - ha
-#     - ntp
+  - name: cat /etc/hosts
+    command: cat /etc/hosts
+    args:
+      warn: no
 
-#   roles:
-#     - role: ../
-#       tags: [ 'worker', 'install', 'worker_install', 'ntp']
-#       task: prepare-ntpd
-#       boss__ntp__timezone: 'America/New_York'
+##############################################################################
+# SERVERS: Install and configure ntp
+##############################################################################
+- hosts: servers
+  name: (servers) - Install and configure ntp
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  vars:
+    boss__ntp__timezone: 'America/New_York'
+  tags:
+    - docker
+    - docker-provision
+    - worker
+    - install
+    - worker_install
+    - ha
+    - ntp
+    - slow
 
-# ##############################################################################
-# # MASTER: Install docker/k8 prepare steps on primary masters
-# ##############################################################################
-# - hosts: primary-master
-#   name: (primary-master) - Install docker and k8 - prepare steps on primary masters
-#   gather_facts: True
-#   become: yes
-#   become_method: sudo
-#   environment:
-#     DEBIAN_FRONTEND: noninteractive
-#   vars:
-#     # hosts_file: /etc/hosts.molecule
-#     boss__docker__version: "18.06"
-#     boss__docker__users: ["vagrant"]
-#     boss__ntp__timezone: 'America/New_York'
-#   tags:
-#     - docker
-#     - docker-provision
-#     - master
-#     - install
-#     - master_install
-#     - ha
-#     - primary_master
-#   roles:
+  roles:
+    - role: ../
+      tags: [ 'worker', 'install', 'worker_install', 'ntp']
+      task: prepare-ntpd
+      boss__ntp__timezone: 'America/New_York'
+      boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241'
+      boss__kubernetes__kubeadm__kubernetes_interface: 'enp0s3'
 
-#     - role: geerlingguy.pip
-#       tags: [ 'primary-master', 'master', 'install', 'master_install']
+##############################################################################
+# MASTER: Install docker/k8 prepare steps on primary masters
+##############################################################################
+- hosts: primary-master
+  name: (primary-master) - Install docker and k8 - prepare steps on primary masters
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  vars:
+    # hosts_file: /etc/hosts.molecule
+    boss__docker__version: "18.06"
+    # NOTE: Getting rid of debug flag, too noisey
+    boss__docker__daemon_flags:
+    - "-H 0.0.0.0:2375 -H unix:///var/run/docker.sock $DOCKER_DAEMON_ARGS"
 
-#     - role: boss-ansible-role-docker
-#       tags: [ 'primary-master', 'master', 'install', 'master_install']
-#       boss__docker__version: "18.06"
-#       boss__docker__users: ["vagrant"]
-#       boss__docker__install_method: "pkg"
+    boss__docker__users: ["vagrant"]
+    boss__ntp__timezone: 'America/New_York'
+  tags:
+    - docker
+    - docker-provision
+    - master
+    - install
+    - master_install
+    - ha
+    - primary_master
+  roles:
 
-#     # role: boss-ansible-role-kubernetes-kubeadm
-#     - role: ../
-#       boss__kubernetes__kubeadm__install_method: "pkg"
-#       tags: [ 'primary-master', 'master', 'install', 'master_install']
-#       task: prepare
-#       boss__kubernetes__kubeadm__run_prepare: True
-#       boss__kubernetes__kubeadm__override_node_ip: True
+    - role: geerlingguy.pip
+      tags: [ 'primary-master', 'master', 'install', 'master_install']
+
+    - role: boss-ansible-role-docker
+      tags: [ 'primary-master', 'master', 'install', 'master_install']
+      boss__docker__version: "18.06"
+      boss__docker__users: ["vagrant"]
+      boss__docker__install_method: "pkg"
+
+    # role: boss-ansible-role-kubernetes-kubeadm
+    - role: ../
+      boss__kubernetes__kubeadm__install_method: "pkg"
+      tags: [ 'primary-master', 'master', 'install', 'master_install']
+      task: prepare
+      boss__kubernetes__kubeadm__run_prepare: True
+      boss__kubernetes__kubeadm__override_node_ip: True
+      boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241'
+      boss__kubernetes__kubeadm__kubernetes_interface: 'enp0s3'
 
 
 
 # ##############################################################################
 # # NODES: Install k8 prepare steps on kubernetes-nodes
 # ##############################################################################
-# - hosts: kubernetes-nodes
-#   name: (kubernetes-nodes) - Install docker and k8 - prepare steps on kubernetes-nodes
-#   gather_facts: True
-#   become: yes
-#   become_method: sudo
-#   environment:
-#     DEBIAN_FRONTEND: noninteractive
+- hosts: kubernetes-nodes
+  name: (kubernetes-nodes) - Install docker and k8 - prepare steps on kubernetes-nodes
+  gather_facts: True
+  become: yes
+  become_method: sudo
+  environment:
+    DEBIAN_FRONTEND: noninteractive
 
-#   vars:
-#     boss__docker__version: "18.06"
-#     boss__docker__users: ["vagrant"]
-#     boss__ntp__timezone: 'America/New_York'
-#   tags:
-#     - docker
-#     - docker-provision
-#     - workers
-#     - install
-#     - worker_install
-#     - ha
-#     - nodes
-#   roles:
+  vars:
+    boss__docker__version: "18.06"
+    # NOTE: Getting rid of debug flag, too noisey
+    boss__docker__daemon_flags:
+    - "-H 0.0.0.0:2375 -H unix:///var/run/docker.sock $DOCKER_DAEMON_ARGS"
 
-#     - role: geerlingguy.pip
-#       tags: [ 'worker', 'install', 'worker_install']
+    boss__docker__users: ["vagrant"]
+    boss__ntp__timezone: 'America/New_York'
+  tags:
+    - docker
+    - docker-provision
+    - workers
+    - install
+    - worker_install
+    - ha
+    - nodes
+  roles:
 
-#     - role: boss-ansible-role-docker
-#       tags: [ 'worker', 'install', 'worker_install']
-#       boss__docker__version: "18.06"
-#       boss__docker__users: ["vagrant"]
-#       boss__docker__install_method: "pkg"
+    - role: geerlingguy.pip
+      tags: [ 'worker', 'install', 'worker_install']
 
-#     # role: boss-ansible-role-kubernetes-kubeadm
-#     - role: ../
-#       boss__kubernetes__kubeadm__install_method: "pkg"
-#       tags: [ 'worker', 'install', 'worker_install']
-#       task: prepare
-#       boss__kubernetes__kubeadm__run_prepare: True
-#       boss__kubernetes__kubeadm__override_node_ip: True
+    - role: boss-ansible-role-docker
+      tags: [ 'worker', 'install', 'worker_install']
+      boss__docker__version: "18.06"
+      boss__docker__users: ["vagrant"]
+      boss__docker__install_method: "pkg"
+
+    # role: boss-ansible-role-kubernetes-kubeadm
+    - role: ../
+      boss__kubernetes__kubeadm__install_method: "pkg"
+      tags: [ 'worker', 'install', 'worker_install']
+      task: prepare
+      boss__kubernetes__kubeadm__run_prepare: True
+      boss__kubernetes__kubeadm__override_node_ip: True
+      boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241'
+      boss__kubernetes__kubeadm__kubernetes_interface: 'enp0s3'
 
 
-# # ####################################################################################################
-# # # COMPILE nvm SETUP
-# # ####################################################################################################
-# - hosts: servers
-#   tags:
-#     - nvm
-#     - tools
-#   vars:
-#     bossjones__user: vagrant
-#     bossjones__group: vagrant
-#     # node_version: 'stable'
-#     # node_version: '8'
-#     node_version: '11'
-#   become: yes
-#   become_method: sudo
-#   environment:
-#     SHELL: /bin/bash
-#   pre_tasks:
-#     - name: '/etc/profile.d'
-#       file:
-#         path: "/etc/profile.d"
-#         state: directory
-#   tasks:
-#     - name: check nvm versions installed for system
-#       shell: $SHELL -lc "command -v nvm"
-#       register: nvm_exists
-#       changed_when: false
-#       ignore_errors: yes
-#       failed_when: false
-#       check_mode: no
+# ####################################################################################################
+# # COMPILE nvm SETUP
+# ####################################################################################################
+- hosts: servers
+  tags:
+    - nvm
+    - tools
+    - slow
+  vars:
+    bossjones__user: vagrant
+    bossjones__group: vagrant
+    # node_version: 'stable'
+    node_version: '8'
+    # node_version: '11'
+  become: yes
+  become_method: sudo
+  environment:
+    SHELL: /bin/bash
+  pre_tasks:
+    - name: '/etc/profile.d'
+      file:
+        path: "/etc/profile.d"
+        state: directory
+  tasks:
+    - name: check nvm versions installed for system
+      shell: $SHELL -lc "command -v nvm"
+      register: nvm_exists
+      changed_when: false
+      ignore_errors: yes
+      failed_when: false
+      check_mode: no
 
-#     - name: If nvm does not exist, call the nvm installer script
-#       shell: |
-#             curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
-#       register: nvm_installed
-#       become: yes
-#       become_user: "{{bossjones__user}}"
+    - name: If nvm does not exist, call the nvm installer script
+      shell: |
+            curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
+      register: nvm_installed
+      become: yes
+      become_user: "{{bossjones__user}}"
 
-#     - name: check nvm versions installed for system
-#       shell: $SHELL -lc "nvm install {{node_version}}"
-#       register: nvm_install
-#       changed_when: false
-#       ignore_errors: yes
-#       failed_when: false
-#       check_mode: no
-#       become: yes
-#       become_user: "{{bossjones__user}}"
+    - name: check nvm versions installed for system
+      shell: $SHELL -lc "nvm install {{node_version}}"
+      register: nvm_install
+      changed_when: false
+      ignore_errors: yes
+      failed_when: false
+      check_mode: no
+      become: yes
+      become_user: "{{bossjones__user}}"
 
-#     - name: check nvm versions installed for system
-#       shell: $SHELL -lc "nvm use {{node_version}}; npm install npm@latest -g"
-#       register: npm_upgrade
-#       changed_when: false
-#       ignore_errors: yes
-#       failed_when: false
-#       check_mode: no
-#       become: yes
-#       become_user: "{{bossjones__user}}"
+    - name: check nvm versions installed for system
+      shell: $SHELL -lc "nvm use {{node_version}}; npm install npm@latest -g"
+      register: npm_upgrade
+      changed_when: false
+      ignore_errors: yes
+      failed_when: false
+      check_mode: no
+      become: yes
+      become_user: "{{bossjones__user}}"
 
-#     - name: check nvm versions installed for system
-#       shell: $SHELL -lc "nvm use {{node_version}}; npm install {{item}}"
-#       register: npm_install_global
-#       changed_when: false
-#       ignore_errors: yes
-#       failed_when: false
-#       check_mode: no
-#       with_items:
-#         # - device-discovery-cli
-#         # - diff-so-fancy
-#         - docker-enter
-#         - docker-loghose
-#         # - figlet-cli
-#         # - get-port-cli
-#         # - getmac
-#         # - gtop
-#         # - jsonlint
-#         # - pathogen-pm
-#         # - speed-test
-#         # - spoof
-#         # - tldr
-#         # - vtop
-#         # - whereami
-#         # - wireless-tools
-#         # - yaml-lint
-#       become: yes
-#       become_user: "{{bossjones__user}}"
+    - name: check nvm versions installed for system
+      shell: $SHELL -lc "nvm use {{node_version}}; npm install {{item}}"
+      register: npm_install_global
+      changed_when: false
+      ignore_errors: yes
+      failed_when: false
+      check_mode: no
+      with_items:
+        # - device-discovery-cli
+        # - diff-so-fancy
+        - docker-enter
+        - docker-loghose
+        # - figlet-cli
+        # - get-port-cli
+        # - getmac
+        # - gtop
+        # - jsonlint
+        # - pathogen-pm
+        # - speed-test
+        # - spoof
+        # - tldr
+        # - vtop
+        # - whereami
+        # - wireless-tools
+        # - yaml-lint
+      become: yes
+      become_user: "{{bossjones__user}}"
 
-#     - name: check nvm versions installed for system
-#       shell: $SHELL -lc "nvm alias default {{node_version}}"
-#       register: nvm_install
-#       changed_when: false
-#       ignore_errors: yes
-#       failed_when: false
-#       check_mode: no
-#       become: yes
-#       become_user: "{{bossjones__user}}"
+    - name: check nvm versions installed for system
+      shell: $SHELL -lc "nvm alias default {{node_version}}"
+      register: nvm_install
+      changed_when: false
+      ignore_errors: yes
+      failed_when: false
+      check_mode: no
+      become: yes
+      become_user: "{{bossjones__user}}"
 
-# #########################################################################################################################################
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# # OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
-# #########################################################################################################################################
+#########################################################################################################################################
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+# OKAY, WE ARE FINALLY READY TO CONFIGURE KUBERNETES. STARTING WITH THE MASTER.
+#########################################################################################################################################
 
 # #############################################################################
 # # Run kubeadm init and start up master
@@ -436,6 +467,10 @@
 #   vars:
 #     # hosts_file: /etc/hosts.molecule
 #     boss__docker__version: "18.06"
+#     # NOTE: Getting rid of debug flag, too noisey
+#     boss__docker__daemon_flags:
+#     - "-H 0.0.0.0:2375 -H unix:///var/run/docker.sock $DOCKER_DAEMON_ARGS"
+
 #     boss__docker__users: ["vagrant"]
 #     boss__ntp__timezone: 'America/New_York'
 #   tags:
@@ -453,6 +488,8 @@
 #       boss__kubernetes__kubeadm__install_method: "pkg"
 #       tags: [ 'primary-master', 'master', 'install', 'master_install', 'kubeadm_init']
 #       task: master
+#       boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241'
+#       boss__kubernetes__kubeadm__kubernetes_interface: 'enp0s3'
 
 
 
@@ -469,6 +506,10 @@
 #   vars:
 #     # hosts_file: /etc/hosts.molecule
 #     boss__docker__version: "18.06"
+#     # NOTE: Getting rid of debug flag, too noisey
+#     boss__docker__daemon_flags:
+#     - "-H 0.0.0.0:2375 -H unix:///var/run/docker.sock $DOCKER_DAEMON_ARGS"
+
 #     boss__docker__users: ["vagrant"]
 #     boss__ntp__timezone: 'America/New_York'
 #   tags:
@@ -486,6 +527,8 @@
 #       boss__kubernetes__kubeadm__install_method: "pkg"
 #       tags: [ 'primary-master', 'master', 'install', 'master_install', 'post_deploy']
 #       task: post_deploy
+#       boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241'
+#       boss__kubernetes__kubeadm__kubernetes_interface: 'enp0s3'
 
 
 
@@ -514,36 +557,44 @@
 #     - role: ../
 #       tags: [ 'primary-worker', 'worker', 'install', 'worker_install', 'node_join']
 #       task: nodes
+#       boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241'
+#       boss__kubernetes__kubeadm__kubernetes_interface: 'enp0s3'
 
 
 
-##############################################################################
-# MASTER: install etcdctl
-##############################################################################
-- hosts: primary-master
-  name: (primary-master) - install etcdctl
-  gather_facts: True
-  become: yes
-  become_method: sudo
-  environment:
-    DEBIAN_FRONTEND: noninteractive
-  vars:
-    # hosts_file: /etc/hosts.molecule
-    boss__docker__version: "18.06"
-    boss__docker__users: ["vagrant"]
-    boss__ntp__timezone: 'America/New_York'
-  tags:
-    - docker
-    - docker-provision
-    - master
-    - install
-    - master_install
-    - ha
-    - primary_master
-    - post_deploy
-  roles:
-    # role: boss-ansible-role-kubernetes-kubeadm
-    - role: ../
-      boss__kubernetes__kubeadm__install_method: "pkg"
-      tags: [ 'primary-master', 'master', 'install', 'master_install', 'post_deploy']
-      task: post_deploy-tools
+# ##############################################################################
+# # MASTER: install etcdctl
+# ##############################################################################
+# - hosts: primary-master
+#   name: (primary-master) - install etcdctl
+#   gather_facts: True
+#   become: yes
+#   become_method: sudo
+#   environment:
+#     DEBIAN_FRONTEND: noninteractive
+#   vars:
+#     # hosts_file: /etc/hosts.molecule
+#     boss__docker__version: "18.06"
+#     # NOTE: Getting rid of debug flag, too noisey
+#     boss__docker__daemon_flags:
+#     - "-H 0.0.0.0:2375 -H unix:///var/run/docker.sock $DOCKER_DAEMON_ARGS"
+
+#     boss__docker__users: ["vagrant"]
+#     boss__ntp__timezone: 'America/New_York'
+#   tags:
+#     - docker
+#     - docker-provision
+#     - master
+#     - install
+#     - master_install
+#     - ha
+#     - primary_master
+#     - post_deploy
+#   roles:
+#     # role: boss-ansible-role-kubernetes-kubeadm
+#     - role: ../
+#       boss__kubernetes__kubeadm__install_method: "pkg"
+#       tags: [ 'primary-master', 'master', 'install', 'master_install', 'post_deploy']
+#       task: post_deploy-tools
+#       boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241'
+#       boss__kubernetes__kubeadm__kubernetes_interface: 'enp0s3'

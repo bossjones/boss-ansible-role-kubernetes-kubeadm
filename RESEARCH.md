@@ -4,6 +4,8 @@ https://www.google.com/search?ei=qogDXLGTEMeijwT9wb3ABA&q=vagrant+%22cluster.loc
 
 Search: vagrant "cluster.local"
 
+* https://dzone.com/articles/advanced-virtualbox-and
+
 * https://github.com/mattes/vagrant-dnsmasq/issues/21
 
 * https://github.com/futuware/kapellmeister/blob/3ac0a1bc857a919e718c7f7b728f0cff460e8849/Vagrantfile

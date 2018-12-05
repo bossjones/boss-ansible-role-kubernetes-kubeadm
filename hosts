@@ -1,5 +1,65 @@
-127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4
-10.0.0.10 master.hyenalab.home master
-10.0.0.11 node1.hyenalab.home node1
-10.0.0.12 node2.hyenalab.home node2
-10.0.0.13 node3.hyenalab.home node3
+[master]
+k8s-master-01.scarlettlab.home
+[node]
+k8s-01.scarlettlab.home
+
+
+# Use FullyQualifiedDomainNames (FQDN) (e.g. machine1.corp.example.com)
+[primary-master:children]
+master
+
+[secondary-masters]
+# If there is only one master, make this section empty
+# master[2:3].corp.example.com
+
+[masters:children]
+primary-master
+secondary-masters
+
+[primary-etcd:children]
+primary-master
+
+[secondary-etcds:children]
+secondary-masters
+
+[etcd:children]
+primary-etcd
+secondary-etcds
+
+[nodes]
+# If there is only one machine both master and node, make this section empty
+k8s-worker-01.scarlettlab.home
+
+[node:children]
+nodes
+
+
+
+# ------------
+
+
+[kubernetes-master:children]
+primary-master
+secondary-masters
+
+[kubernetes-master:vars]
+boss__kubernetes__kubeadm__server_type=master
+is_master=true
+
+[kubernetes-nodes:children]
+nodes
+
+[kubernetes-nodes:vars]
+boss__kubernetes__kubeadm__server_type=node
+is_master=false
+
+[kubernetes:children]
+kubernetes-master
+kubernetes-nodes
+
+[all:children]
+kubernetes
+
+[servers:children]
+kubernetes-master
+kubernetes-nodes

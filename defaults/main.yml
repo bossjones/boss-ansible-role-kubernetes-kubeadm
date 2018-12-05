@@ -86,7 +86,7 @@ boss__kubernetes__kubeadm__apt_cache_time: 86400
 # NOTE: Taken from vagrant-ansible-kubernetes
 boss__kubernetes__kubeadm__install_nfs: true
 
-boss__kubernetes__kubeadm__kubernetes_interface: eth0  # enp0s8 (if vagrant)
+boss__kubernetes__kubeadm__kubernetes_interface: eth0  # enp0s8 (if vagrant)  ... bridge - enp0s3
 boss__kubernetes__kubeadm__nfs_interface: "{{ boss__kubernetes__kubeadm__kubernetes_interface }}"
 
 # SOURCE: darkedges.nfs
@@ -102,11 +102,11 @@ boss__kubernetes__kubeadm__nfs_exports:
 boss__kubernetes__kubeadm__kernel_modules_setup: True
 boss__kubernetes__kubeadm__ntp_setup: True
 
-
-boss__kubernetes__kubeadm__master_node_name: master
 boss__kubernetes__kubeadm__docker_cgroup_driver: cgroupfs
 
-boss__kubernetes__kubeadm__master_node_ip: '192.168.50.101' # vagrant assigned IP address
+boss__kubernetes__kubeadm__master_network_interface: "{{ boss__kubernetes__kubeadm__kubernetes_interface }}"
+# boss__kubernetes__kubeadm__master_node_ip: '192.168.50.101' # vagrant assigned IP address
+boss__kubernetes__kubeadm__master_node_ip: '192.168.1.241' # vagrant assigned IP address
 
 # boss__kubernetes__kubeadm__env_KUBELET_EXTRA_ARGS_list: We will use something like {{ boss__kubernetes__kubeadm__env_KUBELET_EXTRA_ARGS_list | join(' ') } to properly create the value:
 # Environment="KUBELET_EXTRA_ARGS=--node-ip=192.168.50.101 --cgroup-driver=cgroupfs"
@@ -117,12 +117,12 @@ boss__kubernetes__kubeadm__env_KUBELET_EXTRA_ARGS_list:
 
 boss__kubernetes__kubeadm__kubeadm_pod_network_cidr: 10.32.0.0/12  # 10.32.0.0/12 is specifically needed by weave-net
 boss__kubernetes__kubeadm__kubeadm_service_cidr: 10.96.0.0/12  # 10.96.0.0/12 is specifically needed by weave-net
-boss__kubernetes__kubeadm__kubeadm_init_cmd: "kubeadm init --kubernetes-version=1.11.5 --apiserver-advertise-address={{boss__kubernetes__kubeadm__master_node_ip}} --pod-network-cidr={{boss__kubernetes__kubeadm__kubeadm_pod_network_cidr}} --feature-gates=CoreDNS=true --node-name={{boss__kubernetes__kubeadm__master_node_name}} --service-cidr={{boss__kubernetes__kubeadm__kubeadm_service_cidr}}"
+boss__kubernetes__kubeadm__kubeadm_init_cmd: "kubeadm init --kubernetes-version={{KUBERNETES_VERSION | default ('1.11.5') }} --apiserver-advertise-address={{boss__kubernetes__kubeadm__master_node_ip}} --pod-network-cidr={{boss__kubernetes__kubeadm__kubeadm_pod_network_cidr}} --feature-gates=CoreDNS=true --node-name={{master_name}} --service-cidr={{boss__kubernetes__kubeadm__kubeadm_service_cidr}}"
 
-# kubeadm init --kubernetes-version=1.11.5 --apiserver-advertise-address={{boss__kubernetes__kubeadm__master_node_ip}} --pod-network-cidr=10.32.0.0/12 --feature-gates=CoreDNS=true --node-name={{boss__kubernetes__kubeadm__master_node_name}} --service-cidr=10.96.0.0/12 >> cluster_initialized.txt
+# kubeadm init --kubernetes-version={{KUBERNETES_VERSION | default ('1.11.5') }} --apiserver-advertise-address={{boss__kubernetes__kubeadm__master_node_ip}} --pod-network-cidr=10.32.0.0/12 --feature-gates=CoreDNS=true --node-name={{master_name}} --service-cidr=10.96.0.0/12 >> cluster_initialized.txt
 
 boss__kubernetes__kubeadm__k8s_network_addons_urls:
-- "https://cloud.weave.works/k8s/net?k8s-version=v1.11.5&env.IPALLOC_RANGE={{boss__kubernetes__kubeadm__kubeadm_pod_network_cidr}}"
+- "https://cloud.weave.works/k8s/net?k8s-version=v{{KUBERNETES_VERSION | default ('1.11.5') }}&env.IPALLOC_RANGE={{boss__kubernetes__kubeadm__kubeadm_pod_network_cidr}}"
 
 
 # These are literally kubernetes addons, like dashboard, heapster, and more
@@ -142,10 +142,10 @@ boss__kubernetes__kubeadm__k8s_addons_urls:
 ## It's useful if it's a single-machine Kubernetes cluster for development (replacing minikube)
 ## To see taints, use: kubectl describe nodes
 
-boss__kubernetes__kubeadm__master_uncordon: True
+# boss__kubernetes__kubeadm__master_uncordon: False
 
-boss__kubernetes__kubeadm__taints_master:
-- 'node-role.kubernetes.io/master-'  # allow pods to run on master node
+# boss__kubernetes__kubeadm__taints_master:
+# - 'node-role.kubernetes.io/master-'  # allow pods to run on master node
 #taints_master:
 #- 'dedicated=master:NoExecute'                 # Force eviction of pods from master
 #- 'dedicated=master:PreferNoSchedule'          # Safety net
@@ -171,10 +171,10 @@ boss__kubernetes__kubeadm__etcd_download_url: "https://github.com/etcd-io/etcd/r
 
 # vagrant@master:~$ docker images
 # REPOSITORY                                 TAG                 IMAGE ID            CREATED             SIZE
-# k8s.gcr.io/kube-proxy-amd64                v1.11.5             aa7b610992c0        5 days ago          98.1MB
-# k8s.gcr.io/kube-apiserver-amd64            v1.11.5             3a239c93cfbe        5 days ago          187MB
-# k8s.gcr.io/kube-controller-manager-amd64   v1.11.5             67fbf264abce        5 days ago          155MB
-# k8s.gcr.io/kube-scheduler-amd64            v1.11.5             3280f0c09d18        5 days ago          56.8MB
+# k8s.gcr.io/kube-proxy-amd64                v{{KUBERNETES_VERSION | default ('1.11.5') }}             aa7b610992c0        5 days ago          98.1MB
+# k8s.gcr.io/kube-apiserver-amd64            v{{KUBERNETES_VERSION | default ('1.11.5') }}             3a239c93cfbe        5 days ago          187MB
+# k8s.gcr.io/kube-controller-manager-amd64   v{{KUBERNETES_VERSION | default ('1.11.5') }}             67fbf264abce        5 days ago          155MB
+# k8s.gcr.io/kube-scheduler-amd64            v{{KUBERNETES_VERSION | default ('1.11.5') }}             3280f0c09d18        5 days ago          56.8MB
 # weaveworks/weave-npc                       2.5.0               d499500e93d3        3 weeks ago         49.5MB
 # weaveworks/weave-kube                      2.5.0               a5103f96993a        3 weeks ago         148MB
 # k8s.gcr.io/coredns                         1.1.3               b3b94275d97c        6 months ago        45.6MB

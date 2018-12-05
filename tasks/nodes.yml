@@ -44,6 +44,14 @@
      bash /etc/kubeadm-join.sh ;
   args:
     creates: /etc/kubeadm-join.sh
+  register: kubeadm_join
+
+- name: write kubeadm_join to /var/log/kubeadm_join.log
+  copy:
+    content: |
+      {{kubeadm_join.stdout}}
+    dest: /var/log/kubeadm_join.log
+  when: ansible_os_family == "Debian"
 
 - name: checking all nodes up
   shell: >
@@ -57,3 +65,14 @@
   delay: 10
   with_items: "{{ groups['nodes'] }}"
   # when: inventory_hostname == master_hostname
+
+- name: setup $HOME/.kube/config for default user
+  copy: 
+    src: /etc/kubernetes/admin.conf 
+    dest: ~/.kube/config
+    remote_src: True
+  become: '{{ item }}'
+  with_items:
+    - true  # Run as root
+  tags:
+  - kubelet
